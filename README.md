@@ -5,12 +5,12 @@
 支持两种收件人来源：
 
 - **static**：配置文件静态指定收件人（独立使用）
-- **database**：从 PostgreSQL 动态查询收件人（衔接 [WhaleHire Talent Bank](https://github.com/your-org/talent-bank) 等业务系统）
+- **database**：从 PostgreSQL 动态查询收件人（接入业务系统）
 
 ## 工作流程
 
 ```text
-公共邮箱收到新邮件（如 BOSS 简历）
+源邮箱收到新邮件
     ↓
 转发器拉取新邮件（IMAP）
     ↓
@@ -68,28 +68,33 @@ smtp:
   from_name: 简历分发助手
   subject_prefix: "[简历转发]"
 
-# talent-bank PG 连接（recipients_source: database 时生效）
-database:
-  host: ""
-  port: 5432
-  name: talentbank
-  user: ""
-  password: ""                   # 建议通过环境变量注入
-  ssl_mode: disable
+# =============================================
+# 收件人来源：选择一种模式
+#   static   — 手动指定收件人（见下方 rules）
+#   database — 从 PG 查询收件人（见下方 database 配置）
+# =============================================
 
-# 运行模式
 daemon:
   enabled: false                 # true = 长驻循环, false = 单次执行
   sync_interval: 5m
   recipients_source: static      # "static" | "database"
 
-# static 模式收件人规则
+# --- static 模式收件人（recipients_source: static 时生效）---
 rules:
   - name: default
     enabled: true
     recipients:
       - user-a@example.com
       - user-b@example.com
+
+# --- database 模式连接（recipients_source: database 时生效）---
+database:
+  host: ""
+  port: 5432
+  name: ""
+  user: ""
+  password: ""                   # 建议通过环境变量注入
+  ssl_mode: disable
 
 forward:
   dry_run: true                  # true = 只打印不发送（安全默认值）
@@ -146,9 +151,9 @@ rules:
 
 `enabled: false` 的规则会被跳过，多个规则中的重复收件人自动去重。
 
-### database 模式（衔接业务系统）
+### database 模式（接入业务系统）
 
-从 PostgreSQL 的 `resume_mailbox_settings` 表动态查询 `status = 'enabled'` 的 `email_address` 作为收件人：
+从 PostgreSQL 动态查询收件人，适合与业务系统对接：
 
 ```yaml
 daemon:
@@ -157,13 +162,15 @@ daemon:
 database:
   host: your-pg-host
   port: 5432
-  name: talentbank
+  name: your-database
   user: forwarder_readonly
   password: ""
   ssl_mode: disable
 ```
 
-查询 SQL：
+#### 默认查询
+
+不指定表名和字段时，默认查询：
 
 ```sql
 SELECT email_address
@@ -171,15 +178,19 @@ FROM resume_mailbox_settings
 WHERE status = 'enabled' AND deleted_at IS NULL
 ```
 
-**数据库只需只读权限**，建账号方式：
+即查询 `resume_mailbox_settings` 表中 `status = 'enabled'` 的 `email_address` 字段作为收件人列表。
+
+#### 数据库权限
+
+只需只读权限，建账号方式：
 
 ```sql
 CREATE USER forwarder_readonly WITH PASSWORD 'your-password';
-GRANT CONNECT ON DATABASE talentbank TO forwarder_readonly;
+GRANT CONNECT ON DATABASE your_database TO forwarder_readonly;
 GRANT SELECT ON resume_mailbox_settings TO forwarder_readonly;
 ```
 
-每次同步前实时查询，用户在业务系统中启用/禁用邮箱，转发器自动感知。
+每次同步前实时查询，业务系统中收件人的启用/禁用变更，转发器自动感知。
 
 ## CLI 参数
 
@@ -241,7 +252,7 @@ daemon:
 - 启动后立即执行一次同步
 - 之后按 `sync_interval` 间隔循环
 - 支持 `SIGINT` / `SIGTERM` 优雅退出
-- 每次同步前重新获取收件人列表（database 模式下用户变更实时生效）
+- 每次同步前重新获取收件人列表（database 模式下变更实时生效）
 
 ## Docker 部署
 
@@ -294,12 +305,12 @@ docker compose down
 
 ## 多环境配置
 
-项目提供三个配置文件模板，按场景选择：
+项目提供多个配置文件模板，按场景选择：
 
 | 文件 | 场景 | 收件人 | dry-run | daemon |
 |------|------|--------|---------|--------|
 | `config.local.yaml` | 本地 CLI 测试 | static | ✅ | ❌ |
-| `config.db-local.yaml` | 本地衔接 PG | database | ✅ | ❌ |
+| `config.db-local.yaml` | 本地衔接 PG 测试 | database | ✅ | ❌ |
 | `config.yaml` | 生产 Docker 部署 | database | ❌ | ✅ |
 
 使用方式：

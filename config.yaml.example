@@ -3,11 +3,12 @@
 # 复制为 config.yaml / config.local.yaml / config.db-local.yaml 按需修改
 # ============================================
 
+# --- 邮件通道 ---
 source_mailbox:
   host: imap.example.com
   port: 993
   username: ""
-  password: ""                   # 或通过环境变量 MAIL_FORWARDER_SOURCE_MAILBOX_PASSWORD
+  password: ""                   # 或环境变量 MAIL_FORWARDER_SOURCE_MAILBOX_PASSWORD
   use_ssl: true
   folder: INBOX
 
@@ -15,29 +16,25 @@ smtp:
   host: smtp.example.com
   port: 465
   username: ""
-  password: ""                   # 或通过环境变量 MAIL_FORWARDER_SMTP_PASSWORD
+  password: ""                   # 或环境变量 MAIL_FORWARDER_SMTP_PASSWORD
   use_ssl: true
   start_tls: false
   from: ""
   from_name: 简历分发助手
   subject_prefix: "[简历转发]"
 
-# talent-bank PG 连接（recipients_source: database 时生效）
-database:
-  host: ""
-  port: 5432
-  name: talentbank
-  user: ""
-  password: ""                   # 或通过环境变量 MAIL_FORWARDER_DATABASE_PASSWORD
-  ssl_mode: disable
+# =============================================
+# 收件人来源：选择一种模式
+#   static   — 手动指定收件人（见下方 rules）
+#   database — 从 PG 查询 resume_mailbox_settings 表
+# =============================================
 
-# 运行模式
 daemon:
   enabled: false                 # true = 长驻循环, false = 单次执行
   sync_interval: 5m
-  recipients_source: static      # "static" = 用下方 rules | "database" = 从 PG 读
+  recipients_source: static      # ← "static" 或 "database"
 
-# static 模式收件人规则
+# --- static 模式收件人（recipients_source: static 时生效）---
 rules:
   - name: default
     enabled: true
@@ -45,6 +42,16 @@ rules:
       - user-a@example.com
       - user-b@example.com
 
+# --- database 模式连接（recipients_source: database 时生效）---
+database:
+  host: ""                       # 或环境变量 MAIL_FORWARDER_DATABASE_HOST
+  port: 5432
+  name: talentbank               # 或环境变量 MAIL_FORWARDER_DATABASE_NAME
+  user: ""                       # 或环境变量 MAIL_FORWARDER_DATABASE_USER
+  password: ""                   # 或环境变量 MAIL_FORWARDER_DATABASE_PASSWORD
+  ssl_mode: disable
+
+# --- 转发策略 ---
 forward:
   dry_run: true                  # true = 只打印不发送（安全默认值）
   require_attachments: true
