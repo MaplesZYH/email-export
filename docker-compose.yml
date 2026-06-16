@@ -5,14 +5,14 @@ services:
       - ./config.yaml:/etc/mail-forwarder/config.yaml:ro
       - forwarder-state:/data
     environment:
-      # 数据库连接（覆盖 config.yaml 中的值）
+      # talent-bank PG 连接
       MAIL_FORWARDER_DATABASE_HOST: ${DB_HOST:-localhost}
       MAIL_FORWARDER_DATABASE_PORT: ${DB_PORT:-5432}
-      MAIL_FORWARDER_DATABASE_NAME: ${DB_NAME:-talent_bank}
+      MAIL_FORWARDER_DATABASE_NAME: ${DB_NAME:-talentbank}
       MAIL_FORWARDER_DATABASE_USER: ${DB_USER:-forwarder_readonly}
       MAIL_FORWARDER_DATABASE_PASSWORD: ${DB_PASSWORD:-}
       MAIL_FORWARDER_DATABASE_SSL_MODE: ${DB_SSL_MODE:-disable}
-      # 公共邮箱密码（敏感信息不写进 config.yaml）
+      # 公共邮箱 IMAP 密码
       MAIL_FORWARDER_SOURCE_MAILBOX_PASSWORD: ${IMAP_PASSWORD:-}
       # SMTP 密码
       MAIL_FORWARDER_SMTP_PASSWORD: ${SMTP_PASSWORD:-}

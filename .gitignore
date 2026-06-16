@@ -1,4 +1,6 @@
 config.yaml
+config.db-local.yaml
+config.local.yaml
 forwarder_state.json
 logs/
 tmp/

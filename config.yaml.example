@@ -1,22 +1,43 @@
+# ============================================
+# 邮件转发器 - 配置模板
+# 复制为 config.yaml / config.local.yaml / config.db-local.yaml 按需修改
+# ============================================
+
 source_mailbox:
   host: imap.example.com
   port: 993
-  username: boss@example.com
-  password: change-me
+  username: ""
+  password: ""                   # 或通过环境变量 MAIL_FORWARDER_SOURCE_MAILBOX_PASSWORD
   use_ssl: true
   folder: INBOX
 
 smtp:
   host: smtp.example.com
   port: 465
-  username: boss@example.com
-  password: change-me
+  username: ""
+  password: ""                   # 或通过环境变量 MAIL_FORWARDER_SMTP_PASSWORD
   use_ssl: true
   start_tls: false
-  from: boss@example.com
+  from: ""
   from_name: 简历分发助手
   subject_prefix: "[简历转发]"
 
+# talent-bank PG 连接（recipients_source: database 时生效）
+database:
+  host: ""
+  port: 5432
+  name: talentbank
+  user: ""
+  password: ""                   # 或通过环境变量 MAIL_FORWARDER_DATABASE_PASSWORD
+  ssl_mode: disable
+
+# 运行模式
+daemon:
+  enabled: false                 # true = 长驻循环, false = 单次执行
+  sync_interval: 5m
+  recipients_source: static      # "static" = 用下方 rules | "database" = 从 PG 读
+
+# static 模式收件人规则
 rules:
   - name: default
     enabled: true
@@ -25,7 +46,7 @@ rules:
       - user-b@example.com
 
 forward:
-  dry_run: true
+  dry_run: true                  # true = 只打印不发送（安全默认值）
   require_attachments: true
   max_messages_per_run: 50
   allowed_attachment_extensions:
