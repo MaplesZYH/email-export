@@ -1,0 +1,7 @@
+config.yaml
+forwarder_state.json
+logs/
+tmp/
+dist/
+mail-forwarder
+.env

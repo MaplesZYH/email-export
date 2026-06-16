@@ -1,0 +1,41 @@
+source_mailbox:
+  host: imap.example.com
+  port: 993
+  username: boss@example.com
+  password: change-me
+  use_ssl: true
+  folder: INBOX
+
+smtp:
+  host: smtp.example.com
+  port: 465
+  username: boss@example.com
+  password: change-me
+  use_ssl: true
+  start_tls: false
+  from: boss@example.com
+  from_name: 简历分发助手
+  subject_prefix: "[简历转发]"
+
+rules:
+  - name: default
+    enabled: true
+    recipients:
+      - user-a@example.com
+      - user-b@example.com
+
+forward:
+  dry_run: true
+  require_attachments: true
+  max_messages_per_run: 50
+  allowed_attachment_extensions:
+    - .pdf
+    - .doc
+    - .docx
+
+state:
+  file: forwarder_state.json
+
+log:
+  level: info
+  file: ""
